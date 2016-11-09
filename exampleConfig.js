@@ -53,6 +53,7 @@ Optional Variables:
                     negative values mean to use "top" Nth percentile(s) values
                     [%, default: 90]
   flush_counts:     send stats_counts metrics [default: true]
+  flush_rates:      send stats_rates metrics [default: true]
 
   keyFlush:         log the most frequently sent keys [object, default: undefined]
     interval:       how often to log frequent keys [ms, default: 0]
@@ -117,6 +118,9 @@ Optional Variables:
 
   automaticConfigReload: whether to watch the config file and reload it when it
                          changes. The default is true. Set this to false to disable.
+  timersBlacklist:  don't send this timers metric to backend
+                    default: []
+                    options: ['std','upper','upper_90,'lower','lower_90,'count','count_ps','sum','sum_90,'sum_squares','sum_squares_90','mean','median']
 */
 {
   graphitePort: 2003

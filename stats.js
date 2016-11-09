@@ -30,6 +30,7 @@ var healthStatus = config.healthStatus || 'up';
 var old_timestamp = 0;
 var timestamp_lag_namespace;
 var keyNameSanitize = true;
+var timersBlacklist = [];
 
 // Load and init the backend from the backends/ directory.
 function loadBackend(config, name) {
@@ -414,6 +415,9 @@ config.configFile(process.argv[2], function (config) {
 
     flushInterval = Number(config.flushInterval || 10000);
     config.flushInterval = flushInterval;
+
+    timersBlacklist = config.timersBlacklist || [];
+    config.timersBlacklist = timersBlacklist;
 
     if (config.backends) {
       for (var j = 0; j < config.backends.length; j++) {

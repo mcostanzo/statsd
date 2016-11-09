@@ -30,6 +30,7 @@ var graphitePort;
 var graphitePicklePort;
 var graphiteProtocol;
 var flush_counts;
+var flush_rates;
 
 // prefix configuration
 var globalPrefix;
@@ -183,12 +184,16 @@ var flush_stats = function graphite_flush(ts, metrics) {
     var namespace = counterNamespace.concat(keyName);
 
     if (legacyNamespace === true) {
-      stats.add(namespace.join(".") + globalSuffix, valuePerSecond, ts);
+      if (flush_rates) {
+        stats.add(namespace.join(".") + globalSuffix, valuePerSecond, ts);
+      }
       if (flush_counts) {
         stats.add('stats_counts.' + keyName + globalSuffix, value, ts);
       }
     } else {
-      stats.add(namespace.concat('rate').join(".")  + globalSuffix, valuePerSecond, ts);
+      if (flush_rates) {
+        stats.add(namespace.concat('rate').join(".")  + globalSuffix, valuePerSecond, ts);
+      }
       if (flush_counts) {
         stats.add(namespace.concat('count').join(".") + globalSuffix, value, ts);
       }
@@ -198,23 +203,25 @@ var flush_stats = function graphite_flush(ts, metrics) {
   }
 
   for (key in timer_data) {
-    var namespace = timerNamespace.concat(sk(key));
-    var the_key = namespace.join(".");
+    if (timersBlacklist.indexOf(key) === -1) {
+      var namespace = timerNamespace.concat(sk(key));
+      var the_key = namespace.join(".");
 
-    for (timer_data_key in timer_data[key]) {
-      if (typeof(timer_data[key][timer_data_key]) === 'number') {
-        stats.add(the_key + '.' + timer_data_key + globalSuffix, timer_data[key][timer_data_key], ts);
-      } else {
-        for (var timer_data_sub_key in timer_data[key][timer_data_key]) {
-          if (debug) {
-            l.log(timer_data[key][timer_data_key][timer_data_sub_key].toString());
+      for (timer_data_key in timer_data[key]) {
+        if (typeof(timer_data[key][timer_data_key]) === 'number') {
+          stats.add(the_key + '.' + timer_data_key + globalSuffix, timer_data[key][timer_data_key], ts);
+        } else {
+          for (var timer_data_sub_key in timer_data[key][timer_data_key]) {
+            if (debug) {
+              l.log(timer_data[key][timer_data_key][timer_data_sub_key].toString());
+            }
+            stats.add(the_key + '.' + timer_data_key + '.' + timer_data_sub_key + globalSuffix,
+                      timer_data[key][timer_data_key][timer_data_sub_key], ts);
           }
-          stats.add(the_key + '.' + timer_data_key + '.' + timer_data_sub_key + globalSuffix,
-                    timer_data[key][timer_data_key][timer_data_sub_key], ts);
         }
       }
+      numStats += 1;
     }
-    numStats += 1;
   }
 
   for (key in gauges) {
@@ -326,8 +333,10 @@ exports.init = function graphite_init(startup_time, config, events, logger) {
   }
 
   flushInterval = config.flushInterval;
+  timersBlacklist = config.timersBlacklist;
 
   flush_counts = typeof(config.flush_counts) === "undefined" ? true : config.flush_counts;
+  flush_rates = typeof(config.flush_rates) === "undefined" ? true : config.flush_rates;
 
   events.on('flush', flush_stats);
   events.on('status', backend_status);
