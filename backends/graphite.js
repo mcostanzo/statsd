@@ -203,11 +203,11 @@ var flush_stats = function graphite_flush(ts, metrics) {
   }
 
   for (key in timer_data) {
-    if (timersBlacklist.indexOf(key) === -1) {
-      var namespace = timerNamespace.concat(sk(key));
-      var the_key = namespace.join(".");
+    var namespace = timerNamespace.concat(sk(key));
+    var the_key = namespace.join(".");
 
-      for (timer_data_key in timer_data[key]) {
+    for (timer_data_key in timer_data[key]) {
+      if (timersBlacklist.indexOf(timer_data_key) === -1) {
         if (typeof(timer_data[key][timer_data_key]) === 'number') {
           stats.add(the_key + '.' + timer_data_key + globalSuffix, timer_data[key][timer_data_key], ts);
         } else {
@@ -220,8 +220,8 @@ var flush_stats = function graphite_flush(ts, metrics) {
           }
         }
       }
-      numStats += 1;
     }
+    numStats += 1;
   }
 
   for (key in gauges) {
